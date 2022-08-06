@@ -1,0 +1,6 @@
+{
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "diffEditor.codeLens": true,
+  "editor.suggest.preview": true
+}

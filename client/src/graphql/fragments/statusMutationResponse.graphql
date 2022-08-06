@@ -1,0 +1,5 @@
+fragment statusMutationResponse on UserMutationResponse {
+  code
+  success
+  message
+}

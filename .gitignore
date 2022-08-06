@@ -1,0 +1,10 @@
+server/node_modules
+server/dist
+server/.env
+
+
+client/.next
+client/node_modules
+client/next-env.d.ts
+client/yarn-error.log
+client/yarn.lock
