@@ -1,22 +1,22 @@
-require("dotenv").config();
-import "reflect-metadata";
-import express from "express";
-import mongoose from "mongoose";
 import MongoStore from "connect-mongo";
-import session from "express-session";
 import cors from "cors";
+import express from "express";
+import session from "express-session";
+import mongoose from "mongoose";
+import "reflect-metadata";
+require("dotenv").config();
 
-import { COOKIE_NAME, __prod__ } from "./constants";
-import { createConnection } from "typeorm";
-import { User } from "./entities/User";
-import { Post } from "./entities/Post";
+import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-core";
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
+import { createConnection } from "typeorm";
+import { COOKIE_NAME, __prod__ } from "./constants";
+import { Post } from "./entities/Post";
+import { User } from "./entities/User";
 import { HelloResolver } from "./resolvers/hello";
-import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-core";
+import { PostResovler } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
 import { Context } from "./types/Context";
-import { PostResovler } from "./resolvers/post";
 
 const PORT = process.env.PORT || 5555;
 const mongoUrl = `mongodb+srv://${process.env.USERNAME_MONGO_DB}:${process.env.PASSWORD_MONGO_DB}@cluster0.d698c.mongodb.net/?retryWrites=true&w=majority`;

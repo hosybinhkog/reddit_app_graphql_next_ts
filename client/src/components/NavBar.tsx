@@ -1,4 +1,4 @@
-import { Box, Button, Flex, Heading } from "@chakra-ui/react";
+import { Box, Button, Flex, Heading, useToast } from "@chakra-ui/react";
 import NextLink from "next/link";
 import {
   MeDocument,
@@ -9,6 +9,7 @@ import {
 
 const NavBar = () => {
   const { data } = useMeQuery();
+  const toast = useToast();
 
   const [logoutUser, { loading, data: _dataLogout, error: _err }] =
     useLogoutMutation();
@@ -22,6 +23,14 @@ const NavBar = () => {
             data: {
               me: null,
             },
+          });
+
+          toast({
+            title: "Logout sucess",
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+            colorScheme: "messenger",
           });
         }
       },

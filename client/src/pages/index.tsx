@@ -1,9 +1,22 @@
+import { GetPostsDocument, useGetPostsQuery } from "../generated/graphql";
+import { addApolloState, initializeApollo } from "../lib/apolloClient";
 
+const Index = () => {
+  const { data, loading: _loading } = useGetPostsQuery();
 
-const Index = () => (
-  <h1>
-    Hello sỹ Bình
-  </h1>
-)
+  return <>{JSON.stringify(data)}</>;
+};
 
-export default Index
+export const getStaticProps = async () => {
+  const apolloClient = initializeApollo();
+
+  await apolloClient.query({
+    query: GetPostsDocument,
+  });
+
+  return addApolloState(apolloClient, {
+    props: {},
+  });
+};
+
+export default Index;

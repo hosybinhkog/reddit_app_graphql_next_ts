@@ -1,10 +1,12 @@
 import {
   Box,
   Button,
+  CircularProgress,
   FormErrorMessage,
   Heading,
   Link,
   Text,
+  useToast,
 } from "@chakra-ui/react";
 import { Form, Formik, FormikHelpers } from "formik";
 import Router from "next/router";
@@ -19,8 +21,11 @@ import {
 } from "../generated/graphql";
 import { mapFieldErrors } from "../helpers/mapFieldErrors";
 import LinkNext from "next/link";
+import { useCheckAuth } from "../utils/useCheckAuth";
 
 const Login = () => {
+  const { data, loading } = useCheckAuth();
+
   const [loginUser, { error }] = useLoginMutation();
 
   const handleSubmitLogin = async (
@@ -52,6 +57,14 @@ const Login = () => {
         ...errors,
       });
     } else if (response.data?.login?.user) {
+      toast({
+        title: "Login successfully.",
+        description: "Hello " + response.data?.login?.user?.username,
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+        colorScheme: "messenger",
+      });
       Router.push("/");
     }
   };
@@ -61,41 +74,63 @@ const Login = () => {
     password: "",
   };
 
+  const toast = useToast();
+
   return (
-    <Box p={4}>
-      <Heading textAlign={"center"} mt={10} as={"h1"}>
-        Login
-      </Heading>
-      <Wrapper>
-        <Formik onSubmit={handleSubmitLogin} initialValues={initialValues}>
-          {({ isSubmitting }) => (
-            <Form>
-              <InputField
-                name="usernameOrEmail"
-                label="Username Or Email"
-                placeholder="hosybinh..."
-              />
-              <InputField name="password" label="Password" type="password" />
-              {error && <FormErrorMessage>{error.message}</FormErrorMessage>}
-              <Button
-                type="submit"
-                colorScheme={"linkedin"}
-                mt={4}
-                isLoading={isSubmitting}
-              >
-                Login
-              </Button>
-            </Form>
-          )}
-        </Formik>
-        <Text mt={3}>
-          Now to Reddit App ?{" "}
-          <LinkNext href="/register">
-            <Link color="teal.200">Register</Link>
-          </LinkNext>
-        </Text>
-      </Wrapper>
-    </Box>
+    <>
+      {loading || (!loading && data?.me) ? (
+        <>
+          <CircularProgress />
+        </>
+      ) : (
+        <Box p={4}>
+          <Heading textAlign={"center"} mt={10} as={"h1"}>
+            Login
+          </Heading>
+          <Wrapper>
+            <Formik onSubmit={handleSubmitLogin} initialValues={initialValues}>
+              {({ isSubmitting }) => (
+                <Form>
+                  <InputField
+                    name="usernameOrEmail"
+                    label="Username Or Email"
+                    placeholder="hosybinh..."
+                  />
+                  <InputField
+                    name="password"
+                    label="Password"
+                    type="password"
+                  />
+                  {error && (
+                    <FormErrorMessage>{error.message}</FormErrorMessage>
+                  )}
+                  <Button
+                    type="submit"
+                    colorScheme={"linkedin"}
+                    mt={4}
+                    isLoading={isSubmitting}
+                  >
+                    Login
+                  </Button>
+                </Form>
+              )}
+            </Formik>
+            <Text mt={3}>
+              Now to Reddit App ?{" "}
+              <LinkNext href="/register">
+                <Link color="teal.200">Register</Link>
+              </LinkNext>
+            </Text>
+            <Text mt={3}>
+              Forgot password ?{" "}
+              <LinkNext href="/forgot-password">
+                <Link color="teal.200">Click here</Link>
+              </LinkNext>
+            </Text>
+          </Wrapper>
+        </Box>
+      )}
+    </>
   );
 };
 
