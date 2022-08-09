@@ -2,7 +2,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  FormErrorMessage,
   Heading,
   Link,
   Text,
@@ -13,7 +12,6 @@ import Router from "next/router";
 import React from "react";
 import InputField from "../components/InputField";
 import Wrapper from "../components/Wrapper";
-
 import LinkNext from "next/link";
 
 import {
@@ -35,7 +33,7 @@ const Register: React.FC = () => {
   const toast = useToast();
   const { data: _data, loading } = useCheckAuth();
 
-  const [registerUser, { data: _, error, loading: _loading }] =
+  const [registerUser, { data: dataRegister, error: _, loading: _loading }] =
     useRegisterMutation();
 
   const handleSubmitRegister = async (
@@ -109,9 +107,16 @@ const Register: React.FC = () => {
                     label="Password"
                     type="password"
                   />
-                  {error && (
-                    <FormErrorMessage>{error.message}</FormErrorMessage>
-                  )}
+                  <Text
+                    mt={3}
+                    fontSize="13px"
+                    color="tomato"
+                    colorScheme={"red"}
+                  >
+                    {dataRegister?.register?.code === 400
+                      ? dataRegister.register.message
+                      : ""}
+                  </Text>
                   <Button
                     type="submit"
                     colorScheme={"linkedin"}

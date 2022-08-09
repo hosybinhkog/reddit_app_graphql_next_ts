@@ -52,7 +52,9 @@ const NavBar = () => {
     >
       <Flex w="100%" maxW="1200px" justifyContent="space-between">
         <Heading as="h3">
-          <NextLink href={"/"}>Reddit App</NextLink>
+          <NextLink href={"/"}>
+            <a href="/">Reddit App</a>
+          </NextLink>
         </Heading>
 
         <Flex gap={4} align="center">

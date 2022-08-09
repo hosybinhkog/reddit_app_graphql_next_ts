@@ -1,0 +1,11 @@
+mutation createPost($createPostInput: CreatePostInput!) {
+  createPost(createPostInput: $createPostInput) {
+    ...statusMutationResponse
+    post {
+      ...postAndUserInfoFragments
+    }
+    errors {
+      ...fieldErrorFragments
+    }
+  }
+}

@@ -2,15 +2,14 @@ import {
   Box,
   Button,
   CircularProgress,
-  FormErrorMessage,
   Heading,
   Link,
   Text,
   useToast,
 } from "@chakra-ui/react";
 import { Form, Formik, FormikHelpers } from "formik";
+import LinkNext from "next/link";
 import Router from "next/router";
-import React from "react";
 import InputField from "../components/InputField";
 import Wrapper from "../components/Wrapper";
 import {
@@ -20,13 +19,12 @@ import {
   useLoginMutation,
 } from "../generated/graphql";
 import { mapFieldErrors } from "../helpers/mapFieldErrors";
-import LinkNext from "next/link";
 import { useCheckAuth } from "../utils/useCheckAuth";
 
 const Login = () => {
   const { data, loading } = useCheckAuth();
 
-  const [loginUser, { error }] = useLoginMutation();
+  const [loginUser, { data: dataLogin, error: _ }] = useLoginMutation();
 
   const handleSubmitLogin = async (
     values: LoginInput,
@@ -37,7 +35,6 @@ const Login = () => {
         loginInput: values,
       },
       update(cache, { data }) {
-        console.log({ data });
         if (data?.login?.success) {
           console.log("update");
           cache.writeQuery<MeQuery>({
@@ -52,7 +49,6 @@ const Login = () => {
 
     if (response.data?.login?.errors) {
       const errors = mapFieldErrors(response.data.login.errors);
-      console.log(errors);
       setErrors({
         ...errors,
       });
@@ -101,9 +97,16 @@ const Login = () => {
                     label="Password"
                     type="password"
                   />
-                  {error && (
-                    <FormErrorMessage>{error.message}</FormErrorMessage>
-                  )}
+                  <Text
+                    mt={3}
+                    fontSize="13px"
+                    color="tomato"
+                    colorScheme={"red"}
+                  >
+                    {dataLogin?.login?.code === 400
+                      ? dataLogin.login.message
+                      : ""}
+                  </Text>
                   <Button
                     type="submit"
                     colorScheme={"linkedin"}

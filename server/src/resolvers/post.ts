@@ -1,17 +1,42 @@
-import { checkAuth } from './../middleware/checkAuth';
-import { Arg, ID, Mutation, Query, Resolver, UseMiddleware } from "type-graphql";
+import { PaninatedPosts } from "./../types/PaninatedPosts";
+import { User } from "./../entities/User";
+import { Context } from "./../types/Context";
+import { checkAuth } from "./../middleware/checkAuth";
+import {
+  Arg,
+  Ctx,
+  FieldResolver,
+  ID,
+  Int,
+  Mutation,
+  Query,
+  Resolver,
+  Root,
+  UseMiddleware,
+} from "type-graphql";
 import { Post } from "./../entities/Post";
 import { CreatePostInput } from "./../types/CreatePostInput";
 import { PostMutationResponse } from "./../types/PostMutationResponse";
 import { UpdatePostInput } from "./../types/UpdatePostInput";
+import { FindOptionsOrderValue, LessThan } from "typeorm";
 
-
-@Resolver()
+@Resolver((_of) => Post)
 export class PostResovler {
+  @FieldResolver((_return) => String)
+  textSnippet(@Root() root: Post) {
+    return root.text.slice(0, 50);
+  }
+
+  @FieldResolver((_return) => User)
+  async user(@Root() root: Post) {
+    return await User.findOne({ where: { id: root.userId } });
+  }
+
   @Mutation((_returns) => PostMutationResponse)
   @UseMiddleware(checkAuth)
   async createPost(
-    @Arg("createPostInput") { title, text }: CreatePostInput
+    @Arg("createPostInput") { title, text }: CreatePostInput,
+    @Ctx() { req }: Context
   ): Promise<PostMutationResponse> {
     try {
       const newPost = await Post.create({ title, text });
@@ -23,6 +48,8 @@ export class PostResovler {
           message: "create post error server",
         };
       }
+
+      newPost.userId = req.session.userId as string;
 
       await newPost.save();
 
@@ -41,32 +68,70 @@ export class PostResovler {
     }
   }
 
-  @Query((_returns) => [Post] , { nullable: true })
-  async getPosts(): Promise<Post[] | null> {
+  @Query((_returns) => PaninatedPosts, { nullable: true })
+  async getPosts(
+    @Arg("limit", (_type) => Int) limit: number,
+    @Arg("cursor", { nullable: true }) cursor?: string
+  ): Promise<PaninatedPosts | null> {
     try {
-      return await Post.find();
+      const totalCount = await Post.count();
+      const realtLimit = Math.min(10, limit);
+
+      const findOptions: { [key: string]: any } = {
+        order: {
+          createdAt: "DESC" as FindOptionsOrderValue | undefined,
+        },
+        take: realtLimit,
+      };
+
+      let lastPost: Post[] = [];
+
+      if (cursor) {
+        findOptions.where = {
+          createdAt: LessThan(cursor),
+        };
+
+        lastPost = await Post.find({
+          order: { createdAt: "ASC" },
+          take: 1,
+        });
+      }
+
+      const posts = await Post.find(findOptions);
+      console.log(posts);
+
+      return {
+        totalCount,
+        cursor: posts[posts.length - 1].createdAt,
+        hashMore: cursor
+          ? posts[posts.length - 1].createdAt.toString() !==
+            lastPost[0].createdAt.toString()
+          : posts.length !== totalCount,
+        paninatedPosts: posts,
+      };
     } catch (error) {
-      console.log(error)
-      return null
+      console.log(error);
+      return null;
     }
   }
 
   @Query((_return) => Post, { nullable: true })
   async getPost(@Arg("id", (_type) => ID) id: number): Promise<Post | null> {
-   try {
-    const post = await Post.findOne({ where: { id } });
+    try {
+      const post = await Post.findOne({ where: { id } });
 
-    return post;
-   } catch (error) {
-    console.log(error)
-    return null
-   }
+      return post;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
   }
 
   @Mutation((_returns) => PostMutationResponse)
   @UseMiddleware(checkAuth)
   async updatePost(
-    @Arg("updatePostInput") { title, text, id }: UpdatePostInput
+    @Arg("updatePostInput") { title, text, id }: UpdatePostInput,
+    @Ctx() { req }: Context
   ): Promise<PostMutationResponse> {
     try {
       const updatePost = await Post.findOne({ where: { id } });
@@ -76,6 +141,14 @@ export class PostResovler {
           code: 404,
           success: false,
           message: "Post not found",
+        };
+      }
+
+      if ((req.session.userId as String) !== updatePost.userId) {
+        return {
+          code: 401,
+          success: false,
+          message: "U only can update your post",
         };
       }
 
@@ -100,35 +173,45 @@ export class PostResovler {
     }
   }
 
-  @Mutation(_returns => PostMutationResponse)
+  @Mutation((_returns) => PostMutationResponse)
   @UseMiddleware(checkAuth)
-  async deletePost(@Arg('id', (_type) => ID) id: number):Promise<PostMutationResponse>{
+  async deletePost(
+    @Arg("id", (_type) => ID) id: number,
+    @Ctx() { req }: Context
+  ): Promise<PostMutationResponse> {
     try {
       const deletePost = await Post.findOne({ where: { id } });
-      
-      if(!deletePost){
+
+      if (!deletePost) {
         return {
           code: 404,
-          message: 'not found delete post',
-          success: false
-        }
+          message: "not found delete post",
+          success: false,
+        };
       }
 
-      await deletePost?.remove()
+      if ((req.session.userId as String) !== deletePost.userId) {
+        return {
+          code: 401,
+          success: false,
+          message: "U only can update your post",
+        };
+      }
+
+      await deletePost?.remove();
 
       return {
         code: 200,
         success: true,
-        message: 'delete post success'
-      }
-
+        message: "delete post success",
+      };
     } catch (error) {
-      console.log('delete post ', error)
+      console.log("delete post ", error);
       return {
         code: 500,
-        message: 'server internal',
+        message: "server internal",
         success: false,
-      }
+      };
     }
   }
 }

@@ -95,13 +95,24 @@ export type MutationResponse = {
   success: Scalars['Boolean'];
 };
 
+export type PaninatedPosts = {
+  __typename?: 'PaninatedPosts';
+  cursor: Scalars['DateTime'];
+  hashMore: Scalars['Boolean'];
+  paninatedPosts: Array<Post>;
+  totalCount: Scalars['Float'];
+};
+
 export type Post = {
   __typename?: 'Post';
   createdAt: Scalars['DateTime'];
   id: Scalars['ID'];
   text: Scalars['String'];
+  textSnippet: Scalars['String'];
   title: Scalars['String'];
   updatedAt: Scalars['DateTime'];
+  user: User;
+  userId: Scalars['String'];
 };
 
 export type PostMutationResponse = MutationResponse & {
@@ -116,7 +127,7 @@ export type PostMutationResponse = MutationResponse & {
 export type Query = {
   __typename?: 'Query';
   getPost?: Maybe<Post>;
-  getPosts?: Maybe<Array<Post>>;
+  getPosts?: Maybe<PaninatedPosts>;
   hello: Scalars['String'];
   me?: Maybe<User>;
 };
@@ -124,6 +135,12 @@ export type Query = {
 
 export type QueryGetPostArgs = {
   id: Scalars['ID'];
+};
+
+
+export type QueryGetPostsArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  limit: Scalars['Int'];
 };
 
 export type RegisterInput = {
@@ -144,6 +161,7 @@ export type User = {
   email: Scalars['String'];
   id: Scalars['ID'];
   password: Scalars['String'];
+  posts: Array<Post>;
   updatedAt: Scalars['DateTime'];
   username: Scalars['String'];
 };
@@ -159,7 +177,13 @@ export type UserMutationResponse = MutationResponse & {
 
 export type FieldErrorFragmentsFragment = { __typename?: 'FieldError', field: string, message: string };
 
-export type StatusMutationResponseFragment = { __typename?: 'UserMutationResponse', code: number, success: boolean, message: string };
+export type PostAndUserInfoFragmentsFragment = { __typename?: 'Post', id: string, title: string, text: string, createdAt: any, updatedAt: any, textSnippet: string, userId: string, user: { __typename?: 'User', id: string, username: string, email: string } };
+
+type StatusMutationResponse_PostMutationResponse_Fragment = { __typename?: 'PostMutationResponse', code: number, success: boolean, message: string };
+
+type StatusMutationResponse_UserMutationResponse_Fragment = { __typename?: 'UserMutationResponse', code: number, success: boolean, message: string };
+
+export type StatusMutationResponseFragment = StatusMutationResponse_PostMutationResponse_Fragment | StatusMutationResponse_UserMutationResponse_Fragment;
 
 export type UserMuationResponseFragmentsFragment = { __typename?: 'UserMutationResponse', code: number, success: boolean, message: string, user?: { __typename?: 'User', id: string, username: string, email: string } | null, errors?: Array<{ __typename?: 'FieldError', field: string, message: string }> | null };
 
@@ -173,6 +197,13 @@ export type ChangePasswordMutationVariables = Exact<{
 
 
 export type ChangePasswordMutation = { __typename?: 'Mutation', changePassword: { __typename?: 'UserMutationResponse', code: number, success: boolean, message: string, user?: { __typename?: 'User', id: string, username: string, email: string } | null, errors?: Array<{ __typename?: 'FieldError', field: string, message: string }> | null } };
+
+export type CreatePostMutationVariables = Exact<{
+  createPostInput: CreatePostInput;
+}>;
+
+
+export type CreatePostMutation = { __typename?: 'Mutation', createPost: { __typename?: 'PostMutationResponse', code: number, success: boolean, message: string, post?: { __typename?: 'Post', id: string, title: string, text: string, createdAt: any, updatedAt: any, textSnippet: string, userId: string, user: { __typename?: 'User', id: string, username: string, email: string } } | null, errors?: Array<{ __typename?: 'FieldError', field: string, message: string }> | null } };
 
 export type ForgotPasswordMutationVariables = Exact<{
   forgotPasswordInput: ForgotPasswordInput;
@@ -205,13 +236,32 @@ export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type MeQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, username: string, email: string } | null };
 
-export type GetPostsQueryVariables = Exact<{ [key: string]: never; }>;
+export type GetPostsQueryVariables = Exact<{
+  limit: Scalars['Int'];
+  cursor?: InputMaybe<Scalars['String']>;
+}>;
 
 
-export type GetPostsQuery = { __typename?: 'Query', getPosts?: Array<{ __typename?: 'Post', id: string, title: string, text: string, createdAt: any, updatedAt: any }> | null };
+export type GetPostsQuery = { __typename?: 'Query', getPosts?: { __typename?: 'PaninatedPosts', totalCount: number, cursor: any, hashMore: boolean, paninatedPosts: Array<{ __typename?: 'Post', id: string, text: string, title: string, createdAt: any, updatedAt: any, textSnippet: string, user: { __typename?: 'User', id: string, username: string, email: string } }> } | null };
 
+export const PostAndUserInfoFragmentsFragmentDoc = gql`
+    fragment postAndUserInfoFragments on Post {
+  id
+  title
+  text
+  createdAt
+  updatedAt
+  textSnippet
+  userId
+  user {
+    id
+    username
+    email
+  }
+}
+    `;
 export const StatusMutationResponseFragmentDoc = gql`
-    fragment statusMutationResponse on UserMutationResponse {
+    fragment statusMutationResponse on MutationResponse {
   code
   success
   message
@@ -232,7 +282,9 @@ export const FieldErrorFragmentsFragmentDoc = gql`
     `;
 export const UserMuationResponseFragmentsFragmentDoc = gql`
     fragment userMuationResponseFragments on UserMutationResponse {
-  ...statusMutationResponse
+  code
+  success
+  message
   user {
     ...userInfo
   }
@@ -240,8 +292,7 @@ export const UserMuationResponseFragmentsFragmentDoc = gql`
     ...fieldErrorFragments
   }
 }
-    ${StatusMutationResponseFragmentDoc}
-${UserInfoFragmentDoc}
+    ${UserInfoFragmentDoc}
 ${FieldErrorFragmentsFragmentDoc}`;
 export const ChangePasswordDocument = gql`
     mutation ChangePassword($userId: String!, $token: String!, $changePasswordInput: ChangePasswordInput!) {
@@ -282,6 +333,47 @@ export function useChangePasswordMutation(baseOptions?: Apollo.MutationHookOptio
 export type ChangePasswordMutationHookResult = ReturnType<typeof useChangePasswordMutation>;
 export type ChangePasswordMutationResult = Apollo.MutationResult<ChangePasswordMutation>;
 export type ChangePasswordMutationOptions = Apollo.BaseMutationOptions<ChangePasswordMutation, ChangePasswordMutationVariables>;
+export const CreatePostDocument = gql`
+    mutation createPost($createPostInput: CreatePostInput!) {
+  createPost(createPostInput: $createPostInput) {
+    ...statusMutationResponse
+    post {
+      ...postAndUserInfoFragments
+    }
+    errors {
+      ...fieldErrorFragments
+    }
+  }
+}
+    ${StatusMutationResponseFragmentDoc}
+${PostAndUserInfoFragmentsFragmentDoc}
+${FieldErrorFragmentsFragmentDoc}`;
+export type CreatePostMutationFn = Apollo.MutationFunction<CreatePostMutation, CreatePostMutationVariables>;
+
+/**
+ * __useCreatePostMutation__
+ *
+ * To run a mutation, you first call `useCreatePostMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreatePostMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createPostMutation, { data, loading, error }] = useCreatePostMutation({
+ *   variables: {
+ *      createPostInput: // value for 'createPostInput'
+ *   },
+ * });
+ */
+export function useCreatePostMutation(baseOptions?: Apollo.MutationHookOptions<CreatePostMutation, CreatePostMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreatePostMutation, CreatePostMutationVariables>(CreatePostDocument, options);
+      }
+export type CreatePostMutationHookResult = ReturnType<typeof useCreatePostMutation>;
+export type CreatePostMutationResult = Apollo.MutationResult<CreatePostMutation>;
+export type CreatePostMutationOptions = Apollo.BaseMutationOptions<CreatePostMutation, CreatePostMutationVariables>;
 export const ForgotPasswordDocument = gql`
     mutation ForgotPassword($forgotPasswordInput: ForgotPasswordInput!) {
   forgotPassword(forgotPasswordInput: $forgotPasswordInput)
@@ -444,13 +536,24 @@ export type MeQueryHookResult = ReturnType<typeof useMeQuery>;
 export type MeLazyQueryHookResult = ReturnType<typeof useMeLazyQuery>;
 export type MeQueryResult = Apollo.QueryResult<MeQuery, MeQueryVariables>;
 export const GetPostsDocument = gql`
-    query getPosts {
-  getPosts {
-    id
-    title
-    text
-    createdAt
-    updatedAt
+    query getPosts($limit: Int!, $cursor: String) {
+  getPosts(limit: $limit, cursor: $cursor) {
+    totalCount
+    cursor
+    hashMore
+    paninatedPosts {
+      id
+      text
+      title
+      createdAt
+      updatedAt
+      textSnippet
+      user {
+        id
+        username
+        email
+      }
+    }
   }
 }
     `;
@@ -467,10 +570,12 @@ export const GetPostsDocument = gql`
  * @example
  * const { data, loading, error } = useGetPostsQuery({
  *   variables: {
+ *      limit: // value for 'limit'
+ *      cursor: // value for 'cursor'
  *   },
  * });
  */
-export function useGetPostsQuery(baseOptions?: Apollo.QueryHookOptions<GetPostsQuery, GetPostsQueryVariables>) {
+export function useGetPostsQuery(baseOptions: Apollo.QueryHookOptions<GetPostsQuery, GetPostsQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
         return Apollo.useQuery<GetPostsQuery, GetPostsQueryVariables>(GetPostsDocument, options);
       }

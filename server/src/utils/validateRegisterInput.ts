@@ -15,8 +15,6 @@ export const validateRegisterInput = (registerInput: RegisterInput) => {
 
   if (!registerInput.email.includes("@")) {
     checkError++;
-
-    errors.message = errors.message + "Invalid email";
     errors.errors = [
       ...errors.errors,
       {
@@ -29,7 +27,6 @@ export const validateRegisterInput = (registerInput: RegisterInput) => {
   if (registerInput.username.length <= 3) {
     checkError++;
 
-    errors.message = errors.message + "Invalid username";
     errors.errors = [
       ...errors.errors,
       {
@@ -42,7 +39,6 @@ export const validateRegisterInput = (registerInput: RegisterInput) => {
   if (registerInput.password.length <= 6) {
     checkError++;
 
-    errors.message = errors.message + "Invalid password";
     errors.errors = [
       ...errors.errors,
       {

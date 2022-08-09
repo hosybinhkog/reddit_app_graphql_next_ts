@@ -4,6 +4,7 @@ import {
   FormErrorMessage,
   FormLabel,
   Input,
+  Textarea,
 } from "@chakra-ui/react";
 import { useField } from "formik";
 import React from "react";
@@ -13,6 +14,7 @@ interface InputFieldProps {
   label: string;
   placeholder?: string;
   type?: React.HTMLInputTypeAttribute | undefined;
+  textarea?: boolean;
 }
 
 const InputField = (props: InputFieldProps) => {
@@ -22,12 +24,22 @@ const InputField = (props: InputFieldProps) => {
     <Box mt={4}>
       <FormControl isInvalid={!!error}>
         <FormLabel htmlFor={field.name}>{props.label}</FormLabel>
-        <Input
-          id={field.name}
-          placeholder={props.placeholder}
-          {...field}
-          type={props.type}
-        />
+        {props.textarea ? (
+          <Textarea
+            id={field.name}
+            rows={10}
+            placeholder={props.placeholder}
+            size="lg"
+          />
+        ) : (
+          <Input
+            id={field.name}
+            placeholder={props.placeholder}
+            {...field}
+            type={props.type}
+          />
+        )}
+
         {error && <FormErrorMessage>{error}</FormErrorMessage>}
       </FormControl>
     </Box>

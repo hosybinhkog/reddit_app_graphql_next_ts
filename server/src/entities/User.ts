@@ -1,9 +1,11 @@
+import { Post } from "./Post";
 import { Field, ID, ObjectType } from "type-graphql";
 import {
   BaseEntity,
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
@@ -34,4 +36,8 @@ export class User extends BaseEntity {
   @Field()
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Field((_return) => [Post])
+  @OneToMany(() => Post, (post) => post.user)
+  posts: Post[];
 }

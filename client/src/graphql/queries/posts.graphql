@@ -1,9 +1,20 @@
-query getPosts {
-  getPosts {
-    id
-    title
-    text
-    createdAt
-    updatedAt
+query getPosts($limit: Int!, $cursor: String) {
+  getPosts(limit: $limit, cursor: $cursor) {
+    totalCount
+    cursor
+    hashMore
+    paninatedPosts {
+      id
+      text
+      title
+      createdAt
+      updatedAt
+      textSnippet
+      user {
+        id
+        username
+        email
+      }
+    }
   }
 }

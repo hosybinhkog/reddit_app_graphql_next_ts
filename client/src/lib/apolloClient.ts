@@ -1,3 +1,4 @@
+import { Post } from "./../generated/graphql";
 import {
   ApolloClient,
   from,
@@ -39,6 +40,23 @@ function createApolloClient() {
         Query: {
           fields: {
             allPosts: concatPagination(),
+            getPosts: {
+              keyArgs: false,
+              merge(extisting, incoming) {
+                console.log("exing", { extisting, incoming });
+
+                let posts: Post[] = [];
+                if (extisting && extisting.paninatedPosts) {
+                  posts = posts.concat(extisting.paninatedPosts);
+                }
+
+                if (incoming && incoming.paninatedPosts) {
+                  posts = posts.concat(incoming.paninatedPosts);
+                }
+
+                return { ...incoming, paninatedPosts: posts };
+              },
+            },
           },
         },
       },

@@ -1,3 +1,5 @@
+import { validateLoginInput } from "./../utils/validateLoginInput";
+import { Post } from "./../entities/Post";
 import { ChangePasswordInput } from "./../types/ChangePasswordInput";
 import { TokenModel } from "./../models/Token";
 import { sendMail } from "./../utils/sendMail";
@@ -9,12 +11,30 @@ import { validateRegisterInput } from "./../utils/validateRegisterInput";
 import { RegisterInput } from "./../types/RegisterInput";
 import { UserMutationResponse } from "./../types/UserMutationResponse";
 import { User } from "../entities/User";
-import { Arg, Ctx, Mutation, Query, Resolver } from "type-graphql";
+import {
+  Arg,
+  Ctx,
+  FieldResolver,
+  Mutation,
+  Query,
+  Resolver,
+  Root,
+} from "type-graphql";
 import argon2 from "argon2";
 import { v4 as uuidv4 } from "uuid";
 
-@Resolver()
+@Resolver((_of) => User)
 export class UserResolver {
+  @FieldResolver()
+  email(@Root() root: User, @Ctx() { req }: Context) {
+    return req.session.userId === root.id ? root.email : "";
+  }
+
+  @FieldResolver((_return) => [Post])
+  async posts(@Root() root: User) {
+    return await Post.find({ where: { userId: root.id as string } });
+  }
+
   @Query((_returns) => User, { nullable: true })
   async me(@Ctx() { req }: Context): Promise<User | null> {
     try {
@@ -107,6 +127,19 @@ export class UserResolver {
     @Arg("loginInput") { usernameOrEmail, password }: LoginInput,
     @Ctx() { req }: Context
   ): Promise<UserMutationResponse> {
+    const ValidateLoginInput = validateLoginInput({
+      usernameOrEmail,
+      password,
+    });
+
+    if (ValidateLoginInput !== null) {
+      return {
+        code: 400,
+        success: false,
+        ...ValidateLoginInput,
+      };
+    }
+
     try {
       const existingUser = usernameOrEmail.includes("@")
         ? await User.findOne({ where: { email: usernameOrEmail } })
@@ -117,12 +150,6 @@ export class UserResolver {
           code: 404,
           success: false,
           message: "username or email not found",
-          errors: [
-            {
-              field: "usernameOrEmail",
-              message: "Username or email not match",
-            },
-          ],
         };
       }
 
@@ -133,7 +160,7 @@ export class UserResolver {
 
       if (!isMatchPassword) {
         return {
-          code: 400,
+          code: 404,
           success: false,
           message: "Username or password not match",
         };
