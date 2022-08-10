@@ -1,8 +1,14 @@
 import { DeleteIcon, EditIcon } from "@chakra-ui/icons";
 import { Box, IconButton } from "@chakra-ui/react";
+import NextLink from "next/link";
 import React from "react";
 
-const BtnEditDelete = () => {
+interface BtnEditDeleteProps {
+  postId: number | string;
+  onClickDelete?: () => void;
+}
+
+const BtnEditDelete = ({ postId, onClickDelete }: BtnEditDeleteProps) => {
   return (
     <Box
       sx={{
@@ -15,15 +21,18 @@ const BtnEditDelete = () => {
       mt={6}
     >
       <IconButton
-        colorScheme="blue"
+        colorScheme="red"
+        onClick={onClickDelete}
         aria-label="Delete post"
         icon={<DeleteIcon />}
       />
-      <IconButton
-        colorScheme="red"
-        aria-label="Edit post"
-        icon={<EditIcon />}
-      />
+      <NextLink href={`/post/edit/${postId}`}>
+        <IconButton
+          colorScheme="linkedin"
+          aria-label="Edit post"
+          icon={<EditIcon />}
+        />
+      </NextLink>
     </Box>
   );
 };

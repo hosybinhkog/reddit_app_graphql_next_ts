@@ -1,4 +1,4 @@
-import { NetworkStatus } from "@apollo/client";
+import { NetworkStatus, Reference } from "@apollo/client";
 import { AddIcon } from "@chakra-ui/icons";
 import {
   Box,
@@ -9,16 +9,27 @@ import {
   Spinner,
   Text,
   Tooltip,
+  useToast,
 } from "@chakra-ui/react";
+import { GetStaticProps } from "next";
 import Link from "next/link";
 import { format } from "timeago.js";
 import BtnEditDelete from "../components/BtnEditDelete";
-import { GetPostsDocument, useGetPostsQuery } from "../generated/graphql";
+import {
+  GetPostsDocument,
+  useDeletePostMutation,
+  useGetPostsQuery,
+  useMeQuery,
+} from "../generated/graphql";
 import { addApolloState, initializeApollo } from "../lib/apolloClient";
 
-const limit = 5;
+export const limit = 5;
 
 const Index = () => {
+  const { data: meData } = useMeQuery();
+
+  const [deletePost, _] = useDeletePostMutation();
+
   const {
     data,
     loading,
@@ -32,7 +43,41 @@ const Index = () => {
     notifyOnNetworkStatusChange: true,
   });
 
-  console.log("CURSOR", data?.getPosts?.cursor);
+  const toast = useToast();
+
+  const handleClickDeletePost = async (id: string) => {
+    const response = await deletePost({
+      variables: {
+        id: id,
+      },
+      update(cache, { data }) {
+        if (data?.deletePost.success) {
+          cache.modify({
+            fields: {
+              getPosts(existing) {
+                const newPosts = {
+                  ...existing,
+                  totalCount: existing.totalCount - 1,
+                  paninatedPosts: existing.paninatedPosts.filter(
+                    (post: Reference) => post.__ref !== `Post:${id}`
+                  ),
+                };
+
+                return newPosts;
+              },
+            },
+          });
+        }
+      },
+    });
+
+    if (response.data?.deletePost.success) {
+      toast({
+        title: "delete post success!!!",
+        duration: 3000,
+      });
+    }
+  };
 
   const loadMorePost = async () =>
     await fetchMore({ variables: { cursor: data?.getPosts?.cursor } });
@@ -107,7 +152,14 @@ const Index = () => {
                 <Text mb={2} fontSize="sm">
                   Created : {format(post.createdAt)}
                 </Text>
-                <BtnEditDelete />
+                {post.user.id === meData?.me?.id && (
+                  <>
+                    <BtnEditDelete
+                      onClickDelete={() => handleClickDeletePost(post.id)}
+                      postId={post.id}
+                    />
+                  </>
+                )}
               </Flex>
             ))}
           </Box>
@@ -128,7 +180,7 @@ const Index = () => {
   );
 };
 
-export const getStaticProps = async () => {
+export const getStaticProps: GetStaticProps = async () => {
   const apolloClient = initializeApollo();
 
   await apolloClient.query({

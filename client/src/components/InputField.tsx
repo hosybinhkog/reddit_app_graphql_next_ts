@@ -28,6 +28,7 @@ const InputField = (props: InputFieldProps) => {
           <Textarea
             id={field.name}
             rows={10}
+            {...field}
             placeholder={props.placeholder}
             size="lg"
           />

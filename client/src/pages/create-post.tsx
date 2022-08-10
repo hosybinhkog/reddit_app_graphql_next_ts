@@ -1,10 +1,16 @@
-import { Box, Button, CircularProgress, Flex, Heading } from "@chakra-ui/react";
+import {
+  Button,
+  CircularProgress,
+  Flex,
+  Heading,
+  useToast,
+} from "@chakra-ui/react";
 import { Form, Formik } from "formik";
-import React from "react";
+import Router from "next/router";
 import InputField from "../components/InputField";
 import Layout from "../components/Layout";
 import Wrapper from "../components/Wrapper";
-import { CreatePostInput } from "../generated/graphql";
+import { CreatePostInput, useCreatePostMutation } from "../generated/graphql";
 import { useCheckAuth } from "../utils/useCheckAuth";
 
 const CreatePost = () => {
@@ -12,7 +18,61 @@ const CreatePost = () => {
     text: "",
     title: "",
   };
-  const handleSubmitCreateNewPost = async (values: CreatePostInput) => {};
+
+  const [createPost, _] = useCreatePostMutation();
+  const toast = useToast();
+
+  const handleSubmitCreateNewPost = async (values: CreatePostInput) => {
+    const response = await createPost({
+      variables: {
+        createPostInput: values,
+      },
+      update(cache, { data }) {
+        console.log("Update function");
+
+        cache.modify({
+          fields: {
+            getPosts(existing) {
+              console.log("existing modify ", { existing });
+              if (data?.createPost.post) {
+                const newPostRef = cache.identify(data.createPost.post);
+                console.log("New post ref", { newPostRef });
+
+                const newPostAfterCreateNewPost = {
+                  ...existing,
+                  totalCount: existing.totalCount + 1,
+                  paninatedPosts: [
+                    { __ref: `Post:${newPostRef}` },
+                    ...existing.paninatedPosts,
+                  ],
+                };
+
+                console.log("newPostAfterCreatedNewPost", {
+                  newPostAfterCreateNewPost,
+                });
+
+                return newPostAfterCreateNewPost;
+              }
+            },
+          },
+        });
+      },
+    });
+
+    console.log(response);
+
+    if (response.data?.createPost.success) {
+      toast({
+        title: "Create post successfully.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+        colorScheme: "messenger",
+      });
+
+      Router.push("/");
+    }
+  };
   const { data, loading: authLoading } = useCheckAuth();
 
   if (authLoading || (!authLoading && !data?.me)) {
