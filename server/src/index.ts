@@ -1,3 +1,4 @@
+import { Upvote } from "./entities/Upvote";
 import MongoStore from "connect-mongo";
 import cors from "cors";
 import express from "express";
@@ -22,14 +23,14 @@ const PORT = process.env.PORT || 5555;
 const mongoUrl = `mongodb+srv://${process.env.USERNAME_MONGO_DB}:${process.env.PASSWORD_MONGO_DB}@cluster0.d698c.mongodb.net/?retryWrites=true&w=majority`;
 
 const main = async () => {
-  await createConnection({
+  const connection = await createConnection({
     type: "postgres",
     database: "reddit",
     username: process.env.USERNAME_DB,
     password: process.env.PASSWORD_DB,
     logging: true,
     synchronize: true,
-    entities: [User, Post],
+    entities: [User, Post, Upvote],
   });
 
   const app = express();
@@ -72,7 +73,7 @@ const main = async () => {
       validate: false,
     }),
     plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
-    context: ({ req, res }): Context => ({ req, res }),
+    context: ({ req, res }): Context => ({ req, res, connection }),
   });
 
   await applloServer.start();

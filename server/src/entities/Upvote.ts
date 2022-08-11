@@ -1,6 +1,10 @@
-import { BaseEntity, Column, Entity, PrimaryColumn } from "typeorm";
+import { User } from "./User";
+import { Post } from "./Post";
+import { BaseEntity, Column, Entity, ManyToOne, PrimaryColumn } from "typeorm";
+import { ObjectType } from "type-graphql";
 
 @Entity()
+@ObjectType()
 export class Upvote extends BaseEntity {
   @PrimaryColumn()
   userId!: number | string;
@@ -10,4 +14,10 @@ export class Upvote extends BaseEntity {
 
   @Column()
   value!: number;
+
+  @ManyToOne((_to) => Post, (post) => post.upvotes)
+  post!: Post;
+
+  @ManyToOne((_to) => User, (user) => user.upvotes)
+  user!: User;
 }

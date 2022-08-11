@@ -1,11 +1,12 @@
 fragment postAndUserInfoFragments on Post {
   id
-  title
   text
+  title
   createdAt
   updatedAt
   textSnippet
   userId
+  poins
   user {
     id
     username

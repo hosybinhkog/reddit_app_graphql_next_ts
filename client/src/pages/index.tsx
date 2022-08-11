@@ -11,10 +11,11 @@ import {
   Tooltip,
   useToast,
 } from "@chakra-ui/react";
-import { GetStaticProps } from "next";
+import { GetServerSideProps, GetServerSidePropsContext } from "next";
 import Link from "next/link";
 import { format } from "timeago.js";
 import BtnEditDelete from "../components/BtnEditDelete";
+import Vote from "../components/Vote";
 import {
   GetPostsDocument,
   useDeletePostMutation,
@@ -152,6 +153,7 @@ const Index = () => {
                 <Text mb={2} fontSize="sm">
                   Created : {format(post.createdAt)}
                 </Text>
+                <Vote post={post} />
                 {post.user.id === meData?.me?.id && (
                   <>
                     <BtnEditDelete
@@ -180,8 +182,10 @@ const Index = () => {
   );
 };
 
-export const getStaticProps: GetStaticProps = async () => {
-  const apolloClient = initializeApollo();
+export const getServerSideProps: GetServerSideProps = async (
+  context: GetServerSidePropsContext
+) => {
+  const apolloClient = initializeApollo({ headers: context.req.headers });
 
   await apolloClient.query({
     query: GetPostsDocument,

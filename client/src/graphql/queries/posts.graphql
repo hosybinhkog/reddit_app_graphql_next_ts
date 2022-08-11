@@ -4,17 +4,7 @@ query getPosts($limit: Int!, $cursor: String) {
     cursor
     hashMore
     paninatedPosts {
-      id
-      text
-      title
-      createdAt
-      updatedAt
-      textSnippet
-      user {
-        id
-        username
-        email
-      }
+      ...postAndUserInfoFragments
     }
   }
 }

@@ -9,6 +9,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
+import { Upvote } from "./Upvote";
 
 @Entity()
 @ObjectType()
@@ -40,4 +41,7 @@ export class User extends BaseEntity {
   @Field((_return) => [Post])
   @OneToMany(() => Post, (post) => post.user)
   posts: Post[];
+
+  @OneToMany(() => Upvote, (upvote) => upvote.user)
+  upvotes: Upvote[];
 }

@@ -50,6 +50,7 @@ export type Mutation = {
   logout: Scalars['Boolean'];
   register?: Maybe<UserMutationResponse>;
   updatePost: PostMutationResponse;
+  vote: PostMutationResponse;
 };
 
 
@@ -89,6 +90,12 @@ export type MutationUpdatePostArgs = {
   updatePostInput: UpdatePostInput;
 };
 
+
+export type MutationVoteArgs = {
+  inputVoteValue: VoteType;
+  postId: Scalars['ID'];
+};
+
 export type MutationResponse = {
   code: Scalars['Float'];
   message: Scalars['String'];
@@ -107,6 +114,7 @@ export type Post = {
   __typename?: 'Post';
   createdAt: Scalars['DateTime'];
   id: Scalars['ID'];
+  poins: Scalars['Float'];
   text: Scalars['String'];
   textSnippet: Scalars['String'];
   title: Scalars['String'];
@@ -175,9 +183,16 @@ export type UserMutationResponse = MutationResponse & {
   user?: Maybe<User>;
 };
 
+export enum VoteType {
+  Downvote = 'Downvote',
+  Upvote = 'Upvote'
+}
+
 export type FieldErrorFragmentsFragment = { __typename?: 'FieldError', field: string, message: string };
 
-export type PostAndUserInfoFragmentsFragment = { __typename?: 'Post', id: string, title: string, text: string, createdAt: any, updatedAt: any, textSnippet: string, userId: string, user: { __typename?: 'User', id: string, username: string, email: string } };
+export type PostAndUserInfoFragmentsFragment = { __typename?: 'Post', id: string, text: string, title: string, createdAt: any, updatedAt: any, textSnippet: string, userId: string, poins: number, user: { __typename?: 'User', id: string, username: string, email: string } };
+
+export type PostMutaionResponseFragmentsFragment = { __typename?: 'PostMutationResponse', code: number, success: boolean, message: string };
 
 type StatusMutationResponse_PostMutationResponse_Fragment = { __typename?: 'PostMutationResponse', code: number, success: boolean, message: string };
 
@@ -203,7 +218,7 @@ export type CreatePostMutationVariables = Exact<{
 }>;
 
 
-export type CreatePostMutation = { __typename?: 'Mutation', createPost: { __typename?: 'PostMutationResponse', code: number, success: boolean, message: string, post?: { __typename?: 'Post', id: string, title: string, text: string, createdAt: any, updatedAt: any, textSnippet: string, userId: string, user: { __typename?: 'User', id: string, username: string, email: string } } | null, errors?: Array<{ __typename?: 'FieldError', field: string, message: string }> | null } };
+export type CreatePostMutation = { __typename?: 'Mutation', createPost: { __typename?: 'PostMutationResponse', code: number, success: boolean, message: string, post?: { __typename?: 'Post', id: string, text: string, title: string, createdAt: any, updatedAt: any, textSnippet: string, userId: string, poins: number, user: { __typename?: 'User', id: string, username: string, email: string } } | null, errors?: Array<{ __typename?: 'FieldError', field: string, message: string }> | null } };
 
 export type DeletePostMutationVariables = Exact<{
   id: Scalars['ID'];
@@ -245,12 +260,20 @@ export type UpdatePostMutationVariables = Exact<{
 
 export type UpdatePostMutation = { __typename?: 'Mutation', updatePost: { __typename?: 'PostMutationResponse', success: boolean, code: number, message: string, post?: { __typename?: 'Post', title: string, text: string, textSnippet: string, createdAt: any, updatedAt: any, user: { __typename?: 'User', username: string, id: string, email: string } } | null } };
 
+export type VotePMutationVariables = Exact<{
+  inputVoteValue: VoteType;
+  postId: Scalars['ID'];
+}>;
+
+
+export type VotePMutation = { __typename?: 'Mutation', vote: { __typename?: 'PostMutationResponse', code: number, success: boolean, message: string } };
+
 export type GetPostQueryVariables = Exact<{
   id: Scalars['ID'];
 }>;
 
 
-export type GetPostQuery = { __typename?: 'Query', getPost?: { __typename?: 'Post', id: string, text: string, title: string, createdAt: any, updatedAt: any, textSnippet: string, userId: string, user: { __typename?: 'User', id: string, username: string, email: string } } | null };
+export type GetPostQuery = { __typename?: 'Query', getPost?: { __typename?: 'Post', id: string, text: string, title: string, createdAt: any, updatedAt: any, textSnippet: string, userId: string, poins: number, user: { __typename?: 'User', id: string, username: string, email: string } } | null };
 
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -271,22 +294,30 @@ export type GetPostsQueryVariables = Exact<{
 }>;
 
 
-export type GetPostsQuery = { __typename?: 'Query', getPosts?: { __typename?: 'PaninatedPosts', totalCount: number, cursor: any, hashMore: boolean, paninatedPosts: Array<{ __typename?: 'Post', id: string, text: string, title: string, createdAt: any, updatedAt: any, textSnippet: string, user: { __typename?: 'User', id: string, username: string, email: string } }> } | null };
+export type GetPostsQuery = { __typename?: 'Query', getPosts?: { __typename?: 'PaninatedPosts', totalCount: number, cursor: any, hashMore: boolean, paninatedPosts: Array<{ __typename?: 'Post', id: string, text: string, title: string, createdAt: any, updatedAt: any, textSnippet: string, userId: string, poins: number, user: { __typename?: 'User', id: string, username: string, email: string } }> } | null };
 
 export const PostAndUserInfoFragmentsFragmentDoc = gql`
     fragment postAndUserInfoFragments on Post {
   id
-  title
   text
+  title
   createdAt
   updatedAt
   textSnippet
   userId
+  poins
   user {
     id
     username
     email
   }
+}
+    `;
+export const PostMutaionResponseFragmentsFragmentDoc = gql`
+    fragment postMutaionResponseFragments on PostMutationResponse {
+  code
+  success
+  message
 }
     `;
 export const StatusMutationResponseFragmentDoc = gql`
@@ -613,24 +644,47 @@ export function useUpdatePostMutation(baseOptions?: Apollo.MutationHookOptions<U
 export type UpdatePostMutationHookResult = ReturnType<typeof useUpdatePostMutation>;
 export type UpdatePostMutationResult = Apollo.MutationResult<UpdatePostMutation>;
 export type UpdatePostMutationOptions = Apollo.BaseMutationOptions<UpdatePostMutation, UpdatePostMutationVariables>;
+export const VotePDocument = gql`
+    mutation voteP($inputVoteValue: VoteType!, $postId: ID!) {
+  vote(inputVoteValue: $inputVoteValue, postId: $postId) {
+    ...postMutaionResponseFragments
+  }
+}
+    ${PostMutaionResponseFragmentsFragmentDoc}`;
+export type VotePMutationFn = Apollo.MutationFunction<VotePMutation, VotePMutationVariables>;
+
+/**
+ * __useVotePMutation__
+ *
+ * To run a mutation, you first call `useVotePMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useVotePMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [votePMutation, { data, loading, error }] = useVotePMutation({
+ *   variables: {
+ *      inputVoteValue: // value for 'inputVoteValue'
+ *      postId: // value for 'postId'
+ *   },
+ * });
+ */
+export function useVotePMutation(baseOptions?: Apollo.MutationHookOptions<VotePMutation, VotePMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<VotePMutation, VotePMutationVariables>(VotePDocument, options);
+      }
+export type VotePMutationHookResult = ReturnType<typeof useVotePMutation>;
+export type VotePMutationResult = Apollo.MutationResult<VotePMutation>;
+export type VotePMutationOptions = Apollo.BaseMutationOptions<VotePMutation, VotePMutationVariables>;
 export const GetPostDocument = gql`
     query getPost($id: ID!) {
   getPost(id: $id) {
-    id
-    text
-    title
-    createdAt
-    updatedAt
-    textSnippet
-    userId
-    user {
-      id
-      username
-      email
-    }
+    ...postAndUserInfoFragments
   }
 }
-    `;
+    ${PostAndUserInfoFragmentsFragmentDoc}`;
 
 /**
  * __useGetPostQuery__
@@ -738,21 +792,11 @@ export const GetPostsDocument = gql`
     cursor
     hashMore
     paninatedPosts {
-      id
-      text
-      title
-      createdAt
-      updatedAt
-      textSnippet
-      user {
-        id
-        username
-        email
-      }
+      ...postAndUserInfoFragments
     }
   }
 }
-    `;
+    ${PostAndUserInfoFragmentsFragmentDoc}`;
 
 /**
  * __useGetPostsQuery__

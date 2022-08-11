@@ -6,9 +6,11 @@ import {
   CreateDateColumn,
   Entity,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
+import { Upvote } from "./Upvote";
 
 @Entity()
 @ObjectType()
@@ -40,4 +42,11 @@ export class Post extends BaseEntity {
   @Field()
   @UpdateDateColumn({ type: "timestamptz" })
   updatedAt: Date;
+
+  @OneToMany((_to) => Upvote, (upvote) => upvote.post)
+  upvotes: Upvote[];
+
+  @Field((_return) => Number)
+  @Column({ default: 0 })
+  poins!: number;
 }
